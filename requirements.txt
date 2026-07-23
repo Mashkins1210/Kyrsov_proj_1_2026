@@ -1,0 +1,4 @@
+numpy
+matplotlib
+dynamixel-sdk
+rplidar-roboticia==0.9.5
