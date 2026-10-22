@@ -2,3 +2,6 @@ numpy
 matplotlib
 dynamixel-sdk
 rplidar-roboticia==0.9.5
+opencv-python-headless
+requests
+smbus2

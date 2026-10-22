@@ -1,4 +1,4 @@
-DXL_DEVICENAME = '/dev/ttyUSB0'
+DXL_DEVICENAME = '/dev/serial/by-id/usb-FTDI_USB__-__Serial_Converter_FT2N0AME-if00-port0'
 DXL_PROTOCOL_VERSION = 1.0
 DXL_BAUDRATE = 57600
 DXL_IDS = [2, 7, 8, 9]
@@ -7,7 +7,7 @@ ADDR_MX_GOAL_VELOCITY = 32
 ADDR_MX_PRESENT_VELOCITY = 38
 DEGREES_PER_SECOND_AT_300 = 48.0
 
-LIDAR_DEVICE_PATH = '/dev/ttyUSB1'
+LIDAR_DEVICE_PATH = '/dev/serial/by-id/usb-Silicon_Labs_CP2102_USB_to_UART_Bridge_Controller_0001-if00-port0'
 LIDAR_BAUD_RATE = 115200
 LIDAR_TIMEOUT = 1
 
@@ -25,8 +25,8 @@ MIN_SIDE_POINTS = 10
 
 FRONT_CENTER = 180
 REAR_CENTER = 0
-LEFT_CENTER = 270
-RIGHT_CENTER = 90
+LEFT_CENTER = 90
+RIGHT_CENTER = 270
 
 FRONT_ANGLE_RANGE = 40
 REAR_ANGLE_RANGE = 40
@@ -44,3 +44,17 @@ SMALL_TURN_DURATION = 0.5
 
 degrees_per_sec = DEGREES_PER_SECOND_AT_300 * (ROTATE_SPEED / 300.0)
 TURN_DURATION = TURN_ANGLE / degrees_per_sec
+
+ADDR_MX_PRESENT_POSITION = 36   # регистр present position
+WHEEL_DIAMETER_MM = 94.0         # диаметр вашего колеса — ЗАМЕРИТЬ!
+TICKS_PER_REV = 4096             # для MX-серии
+WHEEL_CIRCUMFERENCE = 3.14159 * WHEEL_DIAMETER_MM
+WHEELBASE_MM = 115.0
+# Original direction convention; physical calibration remains unverified.
+MOTOR_FORWARD_SIGN = 1
+
+# Forward signs corrected from operator observations of individual wheel pulses.
+WHEEL_FORWARD_SIGNS = {9: 1, 2: 1, 8: -1, 7: -1}
+
+
+

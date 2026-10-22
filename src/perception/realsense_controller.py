@@ -1,6 +1,7 @@
 import pyrealsense2 as rs
 import numpy as np
 import threading
+import time
 
 class RealSenseController:
     def __init__(self):

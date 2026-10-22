@@ -56,17 +56,17 @@ class ObstacleDetector:
         max_dist = 700 if extended_range else WALL_TOO_FAR_MM
         min_points = 5 if extended_range else 10
         
-        left_dist, left_count = self.get_zone_distances_with_count(scan, LEFT_CENTER, SIDE_ANGLE_RANGE) # LEFT_CENTER = 270
-        right_dist, right_count = self.get_zone_distances_with_count(scan, RIGHT_CENTER, SIDE_ANGLE_RANGE) # RIGHT_CENTER = 90
+        left_dist, left_count = self.get_zone_distances_with_count(scan, LEFT_CENTER, SIDE_ANGLE_RANGE) # LEFT_CENTER = 90
+        right_dist, right_count = self.get_zone_distances_with_count(scan, RIGHT_CENTER, SIDE_ANGLE_RANGE) # RIGHT_CENTER = 270
         
         left_in_range = min_dist < left_dist < max_dist and left_count >= min_points
         right_in_range = min_dist < right_dist < max_dist and right_count >= min_points
         
-        # ИСПРАВЛЕНО: ПОМЕНЯНО МЕСТАМИ ВОЗВРАЩАЕМЫХ ЗНАЧЕНИЙ
+        # Return physical sides consistently with the configured lidar frame.
         if left_in_range and (right_dist > left_dist or not right_in_range):
-            return 'right', left_dist, left_count  # Физически 270° (слева) -> логически "right"
+            return 'left', left_dist, left_count
         elif right_in_range and (left_dist > right_dist or not left_in_range):
-            return 'left', right_dist, right_count # Физически 90° (справа) -> логически "left"
+            return 'right', right_dist, right_count
         return None, float('inf'), 0
 
     def find_nearest_wall_direction(self, scan_data):
@@ -86,8 +86,8 @@ class ObstacleDetector:
         if 135 < nearest_angle < 225:
             return 'front', nearest_dist
         elif 45 < nearest_angle < 135:
-            return 'right', nearest_dist
-        elif 225 < nearest_angle < 315:
             return 'left', nearest_dist
+        elif 225 < nearest_angle < 315:
+            return 'right', nearest_dist
         else:
             return 'back', nearest_dist

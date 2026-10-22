@@ -1,4 +1,5 @@
 import time
+import math
 from src.utils.config import (
     STATE_MOVING, STATE_TURNING, STATE_WALL_FOLLOWING,
     STATE_SEARCHING_WALL, STATE_SMALL_TURN, STATE_PAUSED,
@@ -19,12 +20,13 @@ class RobotController:
 
     def handle_moving_state(self, scan):
         if scan is None or len(scan) == 0:
-            self.motor.move_forward(BASE_SPEED)
+            self.motor.stop_all()
             return 'State: MOVING (no lidar)', 'yellow', 'Lidar offline'
 
         front_dist = self.detector.check_front_obstacle(scan)
         
         if front_dist < STOP_DISTANCE_MM:
+            self.motor.stop_all()
             self.state_machine.start_turning(None)
             self.state_machine.set_state(STATE_TURNING)
             self.last_obstacle_dist = None
@@ -49,19 +51,20 @@ class RobotController:
 
     def handle_wall_following_state(self, scan):
         if scan is None or len(scan) == 0:
-            self.motor.move_forward(BASE_SPEED)
+            self.motor.stop_all()
             return f'State: WALL FOLLOWING ({self.state_machine.wall_side})', 'green', 'No lidar'
 
         elapsed_since_start = time.time() - self.wall_following_start_time
         in_cooldown = elapsed_since_start < self.cooldown_duration
 
-        if in_cooldown:
+        if in_cooldown and self.detector.check_front_obstacle(scan) >= STOP_DISTANCE_MM:
             self.motor.move_forward(BASE_SPEED)
             return f'State: WALL FOLLOWING ({self.state_machine.wall_side}) [cooldown]', 'green', f'{self.cooldown_duration - elapsed_since_start:.1f}s'
 
         front_dist = self.detector.check_front_obstacle(scan)
         
         if front_dist < STOP_DISTANCE_MM:
+            self.motor.stop_all()
             self.state_machine.start_turning(self.state_machine.wall_side)
             self.state_machine.set_state(STATE_TURNING)
             self.last_obstacle_dist = None
@@ -100,6 +103,9 @@ class RobotController:
                 return 'State: WALL FOLLOWING (right)', 'green', f'Distance: {wall_dist:.0f}mm'
 
     def handle_small_turn_state(self, scan):
+        if not scan:
+            self.motor.stop_all()
+            return 'State: STOPPED', 'red', 'Lidar unavailable'
         duration = self.state_machine.get_small_turn_duration()
         direction = self.state_machine.small_turn_direction
 
@@ -119,6 +125,9 @@ class RobotController:
         return f'State: SMALL TURN ({direction})', 'cyan', f'Duration: {duration:.1f}s'
 
     def handle_turning_state(self, scan):
+        if not scan:
+            self.motor.stop_all()
+            return 'State: STOPPED', 'red', 'Lidar unavailable'
         current_time = time.time()
         elapsed = current_time - self.state_machine.turn_start_time
         wall_side = self.state_machine.wall_side # Теперь это физическая сторона стены
@@ -181,7 +190,7 @@ class RobotController:
 
     def handle_searching_wall_state(self, scan):
         if scan is None or len(scan) == 0:
-            self.motor.move_forward(BASE_SPEED)
+            self.motor.stop_all()
             return 'State: SEARCHING WALL', 'orange', 'No lidar'
 
         direction, nearest_dist = self.detector.find_nearest_wall_direction(scan)
@@ -214,3 +223,30 @@ class RobotController:
 
         self.motor.move_forward(BASE_SPEED)
         return 'State: SEARCHING WALL', 'orange', 'Moving forward'
+    def navigate_to_point(self, target_x, target_y, current_x, current_y, current_theta):
+        """
+        Простая навигация к точке: повернуться на цель, ехать вперёд.
+        Возвращает True, когда достигли цели.
+        """
+        dx = target_x - current_x
+        dy = target_y - current_y
+        distance = math.hypot(dx, dy)
+    
+        if distance < 0.2:  # 20 см — достигли
+            self.motor.stop_all()
+            return True
+    
+        target_angle = math.atan2(dy, dx)
+        angle_error = target_angle - current_theta
+        # Нормализация
+        while angle_error > math.pi: angle_error -= 2*math.pi
+        while angle_error < -math.pi: angle_error += 2*math.pi
+    
+        if abs(angle_error) > 0.3:  # Сначала повернуться
+            if angle_error > 0:
+                self.motor.rotate_left(ROTATE_SPEED)
+            else:
+                self.motor.rotate_right(ROTATE_SPEED)
+        else:  # Ехать вперёд
+            self.motor.move_forward(BASE_SPEED)
+        return False
